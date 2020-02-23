@@ -1,9 +1,16 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { withFormik, Form, Field } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 
-const UserForm = ({ values, errors, touched }) => {
+const UserForm = ({ values, errors, touched, status }) => {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    console.log("status has changed", status);
+    status && setUsers(users => [...users, status]);
+  }, [status]);
+
   return (
     <div className="user-form">
       <Form>
@@ -27,8 +34,16 @@ const UserForm = ({ values, errors, touched }) => {
           I have read and agreed to the terms of service
           <Field type="checkbox" name="terms" checked={values.terms} />
         </label>
-        <button>Submit</button>
+        <button type="submit">Submit</button>
       </Form>
+
+      {users.map(users => (
+        <ul key={users.id}>
+          <li>Name: {users.name}</li>
+          <li>Email: {users.email}</li>
+          <li>Password: {users.password}</li>
+        </ul>
+      ))}
     </div>
   );
 };
@@ -46,8 +61,16 @@ const FormikUserForm = withFormik({
     name: Yup.string().required("Name field should be filled"),
     email: Yup.string().required("Please enter a valid email")
   }),
-  handleSubmit(values, formikBag) {
+  handleSubmit(values, { setStatus, resetForm }) {
     console.log("submitting!", values);
+    axios
+      .post("https://reqres.in/api/users", values)
+      .then(res => {
+        console.log("success", res);
+        setStatus(res.data);
+        resetForm();
+      })
+      .catch(err => console.log(err.response));
   }
 })(UserForm);
 
